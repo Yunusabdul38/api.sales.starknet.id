@@ -1,8 +1,10 @@
 #[macro_use]
 mod utils;
 mod config;
+mod logger;
 mod models;
 use axum::{http::StatusCode, routing::get, Router};
+use logger::Logger;
 use mongodb::{bson::doc, options::ClientOptions, Client};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -11,8 +13,12 @@ use tower_http::cors::{Any, CorsLayer};
 
 #[tokio::main]
 async fn main() {
-    println!("sales_handler: starting v{}", env!("CARGO_PKG_VERSION"));
+    println!(
+        "starting v{} of api.sales.starknet.id",
+        env!("CARGO_PKG_VERSION")
+    );
     let conf = config::load();
+    let logger = Logger::new(&conf.watchtower);
     let client_options = ClientOptions::parse(&conf.database.connection_string)
         .await
         .unwrap();
@@ -31,10 +37,10 @@ async fn main() {
         .await
         .is_err()
     {
-        println!("error: unable to connect to database");
+        logger.severe("unable to connect to database");
         return;
     } else {
-        println!("database: connected")
+        logger.info("database: connected")
     }
 
     let cors = CorsLayer::new().allow_headers(Any).allow_origin(Any);
@@ -44,7 +50,7 @@ async fn main() {
         .layer(cors);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], conf.server.port));
-    println!("sales_handler: listening on http://0.0.0.0:{}", conf.server.port);
+    logger.info(format!("listening on http://0.0.0.0:{}", conf.server.port,));
     axum::Server::bind(&addr)
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
