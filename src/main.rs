@@ -11,7 +11,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 #[tokio::main]
 async fn main() {
-    println!("quest_server: starting v{}", env!("CARGO_PKG_VERSION"));
+    println!("sales_handler: starting v{}", env!("CARGO_PKG_VERSION"));
     let conf = config::load();
     let client_options = ClientOptions::parse(&conf.database.connection_string)
         .await
@@ -44,7 +44,7 @@ async fn main() {
         .layer(cors);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], conf.server.port));
-    println!("server: listening on http://0.0.0.0:{}", conf.server.port);
+    println!("sales_handler: listening on http://0.0.0.0:{}", conf.server.port);
     axum::Server::bind(&addr)
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
