@@ -6,6 +6,7 @@ name = "starkship_server"
 connection_string = "xxxxxx"
 
 [watchtower]
+enabled = true
 endpoint = "https://api.watchtower.starknet.id/service/add_message"
 app_id = "XXXXXXXXXXXXXXXXX"
 token = "XXXXXXXXXXXXXXXXX"

@@ -22,9 +22,6 @@ async fn main() {
     let client_options = ClientOptions::parse(&conf.database.connection_string)
         .await
         .unwrap();
-
-    let client = reqwest::Client::builder().build().unwrap();
-
     let shared_state = Arc::new(models::AppState {
         conf: conf.clone(),
         db: Client::with_options(client_options)

@@ -16,6 +16,7 @@ pub_struct!(Clone, Deserialize; WatchtowerTypes {
 });
 
 pub_struct!(Clone, Deserialize; Watchtower {
+    enabled : bool,
     endpoint: String,
     app_id: String,
     token: String,
