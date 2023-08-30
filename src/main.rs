@@ -1,14 +1,19 @@
 #[macro_use]
 mod utils;
 mod config;
+mod endpoints;
 mod logger;
 mod models;
-use axum::{http::StatusCode, routing::get, Router};
+use axum::{
+    http::StatusCode,
+    routing::{get, post},
+    Router,
+};
 use logger::Logger;
 use mongodb::{bson::doc, options::ClientOptions, Client};
+use starknet::core::types::AddTransactionResultCode;
 use std::net::SocketAddr;
 use std::sync::Arc;
-
 use tower_http::cors::{Any, CorsLayer};
 
 #[tokio::main]
@@ -24,6 +29,7 @@ async fn main() {
         .unwrap();
     let shared_state = Arc::new(models::AppState {
         conf: conf.clone(),
+        logger: logger.clone(),
         db: Client::with_options(client_options)
             .unwrap()
             .database(&conf.database.name),
@@ -43,6 +49,7 @@ async fn main() {
     let cors = CorsLayer::new().allow_headers(Any).allow_origin(Any);
     let app = Router::new()
         .route("/", get(root))
+        .route("/add", post(endpoints::add_metadata::handler))
         .with_state(shared_state)
         .layer(cors);
 

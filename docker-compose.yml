@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+
+  sales_manager:
+    container_name: sales_manager
+    build: .
+    command: ./target/release/sales_manager
+    restart: always
+    ports:
+      - 8080:8080

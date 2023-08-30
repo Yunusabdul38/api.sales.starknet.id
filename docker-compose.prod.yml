@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+  sales_manager:
+    container_name: sales_manager
+    build: .
+    command: ./target/release/sales_manager
+    restart: always
+    ports:
+      - 8080:8080
+
+  nginx:
+    image: valian/docker-nginx-auto-ssl
+    restart: on-failure
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ssl_data:/etc/resty-auto-ssl
+    environment:
+      ALLOWED_DOMAINS: "api.sales.starknet.id"
+      SITES: "api.sales.starknet.id=sales_manager:8080"
+
+volumes:
+  ssl_data:
