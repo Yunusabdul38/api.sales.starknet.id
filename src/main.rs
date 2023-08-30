@@ -11,7 +11,6 @@ use axum::{
 };
 use logger::Logger;
 use mongodb::{bson::doc, options::ClientOptions, Client};
-use starknet::core::types::AddTransactionResultCode;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};

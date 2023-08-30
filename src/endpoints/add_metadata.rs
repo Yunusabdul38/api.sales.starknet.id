@@ -25,7 +25,9 @@ fn compute_metadata_hash(email: &str, tax_state: &str, salt: &str) -> String {
     let result = hasher.finalize();
     let hash_hex = hex::encode(result);
 
-    hash_hex
+    // Truncate the last two characters (8 bits) to make it a 248-bit hash so it fits in a felt
+    let truncated_hash_hex = &hash_hex[0..hash_hex.len() - 2];
+    truncated_hash_hex.to_string()
 }
 
 #[derive(Serialize)]
