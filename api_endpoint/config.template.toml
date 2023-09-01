@@ -2,7 +2,7 @@
 port = 8080
 
 [database]
-name = "starkship_server"
+name = "goerli"
 connection_string = "xxxxxx"
 
 [watchtower]

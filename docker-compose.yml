@@ -1,11 +1,56 @@
-version: '3'
+version: "3.6"
 
 services:
+  etcd:
+    image: docker.io/bitnami/etcd:3.5
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+    volumes:
+      - etcd_data:/bitnami/etcd
+    ports:
+      - 2379:2379
 
-  sales_manager:
-    container_name: sales_manager
-    build: .
-    command: ./target/release/sales_manager
+  indexer_sales:
+    image: quay.io/apibara/sink-mongo:0.3
+    depends_on:
+      - etcd
+    restart: always
+    command:
+      - run
+      - --allow-env=/data/env
+      - /data/src/sales.ts
+    volumes:
+      - ${PWD}/indexer:/data/
+    environment:
+      PERSIST_TO_ETCD: http://etcd:2379
+      SINK_ID: sales-indexer
+      AUTH_TOKEN: dna_xxx
+
+  indexer_tax_txs:
+    image: quay.io/apibara/sink-mongo:0.3
+    depends_on:
+      - etcd
+    restart: always
+    command:
+      - run
+      - --allow-env=/data/env
+      - /data/src/tax_txs.ts
+    volumes:
+      - ${PWD}/indexer:/data/
+    environment:
+      PERSIST_TO_ETCD: http://etcd:2379
+      SINK_ID: tax-txs-indexer
+      AUTH_TOKEN: dna_xxx
+
+  api_endpoint:
+    container_name: api_endpoint
+    build:
+      context: ./api_endpoint/
+      dockerfile: Dockerfile
+    command: ./target/release/api_endpoint
     restart: always
     ports:
       - 8080:8080
+
+volumes:
+  etcd_data:

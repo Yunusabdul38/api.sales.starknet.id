@@ -4,6 +4,8 @@ FROM rust:latest
 # Set the working directory
 WORKDIR .
 
+RUN ls -la
+
 # Copy the Cargo.toml and Cargo.lock files
 COPY Cargo.toml Cargo.lock config.toml ./
 
