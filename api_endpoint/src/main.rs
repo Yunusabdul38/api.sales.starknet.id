@@ -18,7 +18,7 @@ use tower_http::cors::{Any, CorsLayer};
 #[tokio::main]
 async fn main() {
     println!(
-        "starting v{} of api.sales.starknet.id",
+        "starting v{} of api_endpoint",
         env!("CARGO_PKG_VERSION")
     );
     let conf = config::load();

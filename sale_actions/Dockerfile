@@ -22,4 +22,4 @@ EXPOSE 8080
 ENV RUST_BACKTRACE "1"
 
 # Run the binary
-CMD ["./target/release/api_endpoint"]
+CMD ["./target/release/sale_actions"]

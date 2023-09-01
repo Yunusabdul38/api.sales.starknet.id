@@ -1,0 +1,18 @@
+[actions]
+
+[actions.send_email]
+todo = "todo"
+
+[database]
+name = "goerli"
+connection_string = "xxxxxx"
+
+[watchtower]
+enabled = true
+endpoint = "https://api.watchtower.starknet.id/service/add_message"
+app_id = "XXXXXXXXXXXXXXXXX"
+token = "XXXXXXXXXXXXXXXXX"
+[watchtower.types]
+info = "goerli/info"
+warning = "goerli/warning"
+severe = "goerli/severe"

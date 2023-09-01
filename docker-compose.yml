@@ -47,10 +47,16 @@ services:
     build:
       context: ./api_endpoint/
       dockerfile: Dockerfile
-    command: ./target/release/api_endpoint
     restart: always
     ports:
       - 8080:8080
+
+  sale_actions:
+    container_name: sale_actions
+    build:
+      context: ./sale_actions/
+      dockerfile: Dockerfile
+    restart: always
 
 volumes:
   etcd_data:

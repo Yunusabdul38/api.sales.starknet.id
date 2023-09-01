@@ -64,8 +64,8 @@ type SaleDocument = {
   timestamp: number;
   expiry: number;
   auto: boolean;
-  sponsor: number;
-  sponsor_comm: number;
+  sponsor?: string;
+  sponsor_comm?: number;
 };
 
 interface TransferDetails {
@@ -79,7 +79,7 @@ export default function transform({ header, events }: Block) {
   let lastTransfer: TransferDetails | null = null;
   let autoRenewed = false;
   let sponsorComm: number | null = null;
-  let sponsorAddr: number | null = null;
+  let sponsorAddr: string = "0x0";
   let metadata = "0x0";
 
   // Mapping and decoding each event in the block
@@ -108,7 +108,7 @@ export default function transform({ header, events }: Block) {
 
         case SELECTOR_KEYS.REFERRAL:
           sponsorComm = Number(event.data[1]);
-          sponsorAddr = Number(event.data[3]);
+          sponsorAddr = event.data[3];
           autoRenewed = true;
           break;
 
@@ -124,21 +124,19 @@ export default function transform({ header, events }: Block) {
           const expiry = Number(event.data[arrLen + 2]);
 
           // Basic output object structure
-          const output = {
+          const output: SaleDocument = {
             tx_hash: transaction.meta.hash,
-            meta_hash: metadata.slice(2),
+            meta_hash: metadata.slice(4),
             domain: decodeDomain(event.data.slice(1, 1 + arrLen).map(BigInt)),
             price: +lastTransfer.amount,
             payer: lastTransfer.from_address,
             timestamp: new Date(timestamp).getTime() / 1000,
             expiry,
             auto: autoRenewed,
-            sponsor: 0,
-            sponsor_comm: 0,
           };
 
           // Conditionally add sponsor and sponsor_comm if they are not null
-          if (sponsorAddr !== null) {
+          if (sponsorAddr !== "0x0") {
             output.sponsor = sponsorAddr;
             output.sponsor_comm = +(sponsorComm as number);
           }
@@ -146,7 +144,7 @@ export default function transform({ header, events }: Block) {
           lastTransfer = null;
           autoRenewed = false;
           sponsorComm = null;
-          sponsorAddr = null;
+          sponsorAddr = "0x0";
           return output;
         }
 
