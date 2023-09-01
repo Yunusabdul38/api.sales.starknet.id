@@ -2,7 +2,7 @@
 
 ## Overview
 
-This monorepo contains three programs to manage the sales data of the StarkNetID naming smart contract in a secury and privacy preserving way.
+This monorepo contains three programs to manage the sales data of the StarkNetID naming smart contract in a secure and privacy preserving way.
 
 ## Components
 
