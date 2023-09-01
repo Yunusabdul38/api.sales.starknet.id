@@ -20,7 +20,7 @@ services:
       - --allow-env=/data/env
       - /data/src/sales.ts
     volumes:
-      - ${PWD}/indexer:/data/
+      - ./indexer:/data/
     environment:
       PERSIST_TO_ETCD: http://etcd:2379
       SINK_ID: sales-indexer
@@ -36,7 +36,7 @@ services:
       - --allow-env=/data/env
       - /data/src/tax_txs.ts
     volumes:
-      - ${PWD}/indexer:/data/
+      - ./indexer:/data/
     environment:
       PERSIST_TO_ETCD: http://etcd:2379
       SINK_ID: tax-txs-indexer

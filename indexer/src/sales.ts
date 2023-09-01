@@ -19,12 +19,16 @@ const filter = {
   header: { weak: true },
   events: [
     {
-      fromAddress: Deno.env.get("ETH_CONTRACT"),
-      keys: [formatFelt(SELECTOR_KEYS.TRANSFER)],
+      fromAddress: Deno.env.get("NAMING_CONTRACT"),
+      keys: [formatFelt(SELECTOR_KEYS.STARK_UPDATE)],
     },
     {
       fromAddress: Deno.env.get("NAMING_CONTRACT"),
-      keys: [formatFelt(SELECTOR_KEYS.STARK_UPDATE)],
+      keys: [formatFelt(SELECTOR_KEYS.SALE_METADATA)],
+    },
+    {
+      fromAddress: Deno.env.get("ETH_CONTRACT"),
+      keys: [formatFelt(SELECTOR_KEYS.TRANSFER)],
     },
     {
       fromAddress: Deno.env.get("REFERRAL_CONTRACT"),
