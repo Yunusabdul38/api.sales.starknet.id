@@ -7,8 +7,6 @@ services:
       ALLOW_NONE_AUTHENTICATION: "yes"
     volumes:
       - etcd_data:/bitnami/etcd
-    ports:
-      - 2379:2379
 
   indexer_sales:
     image: quay.io/apibara/sink-mongo:0.3
@@ -42,15 +40,6 @@ services:
       SINK_ID: tax-txs-indexer
       AUTH_TOKEN: dna_xxx
 
-  api_endpoint:
-    container_name: api_endpoint
-    build:
-      context: ./api_endpoint/
-      dockerfile: Dockerfile
-    restart: always
-    ports:
-      - 8080:8080
-
   sale_actions:
     container_name: sale_actions
     build:
@@ -58,5 +47,25 @@ services:
       dockerfile: Dockerfile
     restart: always
 
+  api_endpoint:
+    container_name: api_endpoint
+    build:
+      context: ./api_endpoint/
+      dockerfile: Dockerfile
+    restart: always
+
+  nginx:
+    image: valian/docker-nginx-auto-ssl
+    restart: on-failure
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ssl_data:/etc/resty-auto-ssl
+    environment:
+      ALLOWED_DOMAINS: "api.sales.starknet.id"
+      SITES: "api.sales.starknet.id=api_endpoint:8080"
+
 volumes:
   etcd_data:
+  ssl_data:
