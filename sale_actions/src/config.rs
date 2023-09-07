@@ -6,6 +6,11 @@ pub_struct!(Clone, Deserialize; General {
     check_delay: u64,
 });
 
+pub_struct!(Clone, Deserialize; Email {
+    base_url : String,
+    api_key: String,
+});
+
 pub_struct!(Clone, Deserialize; Database {
     name: String,
     connection_string: String,
@@ -27,6 +32,7 @@ pub_struct!(Clone, Deserialize; Watchtower {
 
 pub_struct!(Clone, Deserialize;  Config {
     general : General,
+    email : Email,
     database: Database,
     watchtower: Watchtower,
 });

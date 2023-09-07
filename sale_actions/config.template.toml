@@ -1,7 +1,9 @@
-[actions]
+[general]
+check_delay = 10
 
-[actions.send_email]
-todo = "todo"
+[email]
+base_url="https://connect.mailerlite.com/api/subscribers"
+api_key = "xxx"
 
 [database]
 name = "goerli"

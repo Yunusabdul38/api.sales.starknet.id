@@ -28,7 +28,7 @@ async fn main() {
     }
 
     loop {
-        processing::process_data(&db, &logger).await;
+        processing::process_data(&conf, &db, &logger).await;
         sleep(Duration::from_secs(conf.general.check_delay)).await; // Sleep for 60 seconds before repeating
     }
 }
