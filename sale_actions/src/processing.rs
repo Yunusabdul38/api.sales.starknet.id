@@ -1,5 +1,6 @@
 use crate::{config::Config, logger::Logger};
 use chrono::NaiveDateTime;
+use email_address::EmailAddress;
 use futures::stream::StreamExt;
 use mongodb::{
     bson::{doc, Document},
@@ -33,6 +34,10 @@ pub struct SaleDoc {
 }
 
 async fn process_sale(conf: &Config, logger: &Logger, sale: &SaleDoc) {
+    if !EmailAddress::is_valid(&sale.metadata[0].email) {
+        return;
+    }
+
     // Extract the groups from the MetadataDoc and format them
     let groups_params: Vec<String> = sale.metadata[0]
         .groups
@@ -66,7 +71,14 @@ async fn process_sale(conf: &Config, logger: &Logger, sale: &SaleDoc) {
     {
         Ok(res) => {
             if !res.status().is_success() {
-                logger.severe("Received non-success status from POST request.");
+                logger.severe(format!(
+                    "Received non-success status from POST request: {}. URL: {}, Response body: {}",
+                    res.status(),
+                    url,
+                    res.text()
+                        .await
+                        .unwrap_or_else(|_| "Failed to retrieve response body".to_string())
+                ));
             }
         }
         Err(e) => {
