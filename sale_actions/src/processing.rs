@@ -35,6 +35,7 @@ pub struct SaleDoc {
 
 async fn process_sale(conf: &Config, logger: &Logger, sale: &SaleDoc) {
     if !EmailAddress::is_valid(&sale.metadata[0].email) {
+        logger.local(format!("email {} is not valid", &sale.metadata[0].email));
         return;
     }
 
