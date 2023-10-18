@@ -9,12 +9,12 @@ services:
       - etcd_data:/bitnami/etcd
 
   indexer_sales:
-    image: quay.io/apibara/sink-mongo:0.4
+    image: quay.io/apibara/sink-mongo:0.4.1
     depends_on:
       - etcd
     restart: always
     ports:
-      - "8000:8000"
+      - "8001:8001"
     command:
       - run
       - --allow-env=/data/env
@@ -28,17 +28,17 @@ services:
       AUTH_TOKEN: dna_xxx
 
   indexer_tax_txs:
-    image: quay.io/apibara/sink-mongo:0.4
+    image: quay.io/apibara/sink-mongo:0.4.1
     depends_on:
       - etcd
     restart: always
     ports:
-      - "8000:8000"
+      - "8002:8002"
     command:
       - run
       - --allow-env=/data/env
       - /data/src/tax_txs.ts
-      - --status-server-address=0.0.0.0:8001
+      - --status-server-address=0.0.0.0:8002
     volumes:
       - ./indexer:/data/
     environment:
