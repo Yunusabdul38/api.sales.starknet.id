@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use crate::{models::AppState, utils::get_error};
+use crate::{
+    models::AppState,
+    utils::{get_error, to_hex},
+};
 use axum::{extract::State, response::IntoResponse, Json};
 use reqwest::StatusCode;
 use serde_derive::{Deserialize, Serialize};
@@ -8,9 +11,16 @@ use starknet::core::types::FieldElement;
 
 #[derive(Serialize, Deserialize)]
 pub struct MailSubscribe {
-    meta_hash: String,
+    #[serde(serialize_with = "field_element_to_hex")]
     tx_hash: FieldElement,
     group: String,
+}
+
+fn field_element_to_hex<S>(fe: &FieldElement, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(&to_hex(*fe))
 }
 
 #[derive(Serialize)]

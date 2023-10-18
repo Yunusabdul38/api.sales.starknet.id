@@ -7,13 +7,12 @@ use mongodb::{
     Collection, Database,
 };
 use reqwest::header;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MetadataDoc {
     pub meta_hash: String,
     pub email: String,
-    pub groups: Vec<String>,
     pub tax_state: String,
     pub salt: String,
 }
@@ -31,6 +30,7 @@ pub struct SaleDoc {
     pub sponsor: Option<String>,
     pub sponsor_comm: Option<f64>,
     pub metadata: Vec<MetadataDoc>,
+    pub same_tx_groups: Vec<String>, // The new field
 }
 
 async fn process_sale(conf: &Config, logger: &Logger, sale: &SaleDoc) {
@@ -40,8 +40,8 @@ async fn process_sale(conf: &Config, logger: &Logger, sale: &SaleDoc) {
     }
 
     // Extract the groups from the MetadataDoc and format them
-    let groups_params: Vec<String> = sale.metadata[0]
-        .groups
+    let groups_params: Vec<String> = sale
+        .same_tx_groups
         .iter()
         .map(|group| format!("groups[]={}", group))
         .collect();
@@ -114,6 +114,20 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
         doc! {
             "$match": {
                 "processed_doc": { "$eq": [] }
+            }
+        },
+        doc! {
+            "$lookup": {
+                "from": "email_groups",
+                "localField": "tx_hash",
+                "foreignField": "tx_hash",
+                "as": "same_tx_groups"
+            }
+        },
+        // Optional: If you only want the 'group' field from the same_tx_groups
+        doc! {
+            "$addFields": {
+                "same_tx_groups": "$same_tx_groups.group"
             }
         },
     ];
