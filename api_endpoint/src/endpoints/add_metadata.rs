@@ -13,7 +13,6 @@ use sha2::{Digest, Sha256};
 pub struct AddMetadata {
     meta_hash: String,
     email: String,
-    groups: Vec<String>,
     tax_state: String,
     salt: String,
 }
