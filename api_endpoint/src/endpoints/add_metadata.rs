@@ -18,12 +18,9 @@ pub struct AddMetadata {
     salt: String,
 }
 
-fn compute_metadata_hash(email: &str, groups: &Vec<String>, tax_state: &str, salt: &str) -> String {
+fn compute_metadata_hash(email: &str, tax_state: &str, salt: &str) -> String {
     let separator = "|";
-    let group_separator = ",";
-    let groups_str = groups.join(group_separator);
-
-    let data = format!("{}{}{}{}{}{}{}", email, separator, tax_state, separator, groups_str, separator, salt);
+    let data = format!("{}{}{}{}{}", email, separator, tax_state, separator, salt);
 
     let mut hasher = Sha256::new();
     hasher.update(data.as_bytes());
@@ -44,8 +41,7 @@ pub async fn handler(
     State(state): State<Arc<AppState>>,
     Json(query): Json<AddMetadata>,
 ) -> impl IntoResponse {
-    let computed_meta_hash =
-        compute_metadata_hash(&query.email, &query.groups, &query.tax_state, &query.salt);
+    let computed_meta_hash = compute_metadata_hash(&query.email, &query.tax_state, &query.salt);
     if computed_meta_hash != query.meta_hash {
         return get_specific_error(StatusCode::BAD_REQUEST, "unable to verify hash".to_string());
     }
