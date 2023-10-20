@@ -17,10 +17,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 #[tokio::main]
 async fn main() {
-    println!(
-        "starting v{} of api_endpoint",
-        env!("CARGO_PKG_VERSION")
-    );
+    println!("starting v{} of api_endpoint", env!("CARGO_PKG_VERSION"));
     let conf = config::load();
     let logger = Logger::new(&conf.watchtower);
     let client_options = ClientOptions::parse(&conf.database.connection_string)
@@ -49,6 +46,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root))
         .route("/add_metadata", post(endpoints::add_metadata::handler))
+        .route("/mail_subscribe", post(endpoints::mail_subscribe::handler))
         .with_state(shared_state)
         .layer(cors);
 
