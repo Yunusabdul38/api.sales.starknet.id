@@ -71,3 +71,13 @@ export function decodeDomain(encoded: bigint[]): string {
 
   return decoded.concat("stark");
 }
+
+
+/**
+ * Decode starknetid domain represented as a single bigint 454245n -> 'test.stark'
+ * @param bigint
+ * @returns string
+ */
+export function decodeRootDomain(encoded: bigint): string {
+  return  decode(encoded).concat(".stark");
+}
