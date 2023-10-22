@@ -46,6 +46,25 @@ services:
       SINK_ID: tax-txs-indexer
       AUTH_TOKEN: dna_xxx
 
+  indexer_auto_renew:
+    image: quay.io/apibara/sink-mongo:0.4.1
+    depends_on:
+      - etcd
+    restart: always
+    ports:
+      - "8003:8003"
+    command:
+      - run
+      - --allow-env=/data/env
+      - /data/src/auto_renew_updates.ts
+      - --status-server-address=0.0.0.0:8003
+    volumes:
+      - ./indexer:/data/
+    environment:
+      PERSIST_TO_ETCD: http://etcd:2379
+      SINK_ID: auto-renew-updates-indexer
+      AUTH_TOKEN: dna_xxx
+
   sale_actions:
     container_name: sale_actions
     build:
