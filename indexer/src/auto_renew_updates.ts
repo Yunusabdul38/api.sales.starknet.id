@@ -59,7 +59,7 @@ export default function transform({ events }: Block) {
                   allowance: uint256
                     .uint256ToBN({ low: amountLow, high: amountHigh })
                     .toString(),
-                  meta_hash: metaHash,
+                  meta_hash: metaHash.slice(4),
                   tx_hash: transaction.meta.hash,
                 },
               },
