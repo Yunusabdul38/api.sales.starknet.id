@@ -20,6 +20,7 @@ services:
       - --allow-env=/data/env
       - /data/src/sales.ts
       - --status-server-address=0.0.0.0:8001
+      - --max-message-size=128MB
     volumes:
       - ./indexer:/data/
     environment:
@@ -39,6 +40,7 @@ services:
       - --allow-env=/data/env
       - /data/src/tax_txs.ts
       - --status-server-address=0.0.0.0:8002
+      - --max-message-size=128MB
     volumes:
       - ./indexer:/data/
     environment:
@@ -58,6 +60,7 @@ services:
       - --allow-env=/data/env
       - /data/src/auto_renew_updates.ts
       - --status-server-address=0.0.0.0:8003
+      - --max-message-size=128MB
     volumes:
       - ./indexer:/data/
     environment:
