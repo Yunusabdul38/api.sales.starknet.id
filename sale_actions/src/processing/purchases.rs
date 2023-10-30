@@ -13,7 +13,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SaleDoc {
     pub tx_hash: String,
-    pub meta_hash: String,
     pub domain: String,
     pub price: f64,
     pub payer: String,
@@ -136,7 +135,7 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
                 }
                 Ok(sales_doc) => {
                     process_sale(&conf, &logger, &sales_doc).await;
-                    processed.push(sales_doc.meta_hash);
+                    processed.push(sales_doc.metadata[0].meta_hash.clone());
                 }
             },
             Err(e) => {
