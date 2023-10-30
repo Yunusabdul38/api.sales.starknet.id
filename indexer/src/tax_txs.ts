@@ -11,6 +11,7 @@ import {
   DECIMALS,
   DB_NAME,
   MONGO_CONNECTION_STRING,
+  FINALITY,
 } from "./common/constants.ts";
 
 const filter = {
@@ -29,6 +30,7 @@ export const config = {
   network: "starknet",
   filter,
   sinkType: "mongo",
+  finality: FINALITY,
   sinkOptions: {
     connectionString: MONGO_CONNECTION_STRING,
     database: DB_NAME,
