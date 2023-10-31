@@ -92,7 +92,9 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
         },
         doc! {
             "$match": {
-                "metadata": { "$ne": [] }
+                "metadata.meta_hash": doc! {
+                  "$exists": true
+                }
             }
         },
         doc! {
@@ -131,7 +133,7 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
         match result {
             Ok(document) => match mongodb::bson::from_document::<SaleDoc>(document) {
                 Err(e) => {
-                    logger.severe(format!("Error parsing doc: {}", e));
+                    logger.severe(format!("Error parsing doc in purchase: {}", e));
                 }
                 Ok(sales_doc) => {
                     process_sale(&conf, &logger, &sales_doc).await;

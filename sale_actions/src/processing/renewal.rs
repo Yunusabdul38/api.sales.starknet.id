@@ -1,6 +1,5 @@
 use super::MetadataDoc;
 use crate::{config::Config, logger::Logger};
-use chrono::format::format;
 use email_address::EmailAddress;
 use futures::stream::StreamExt;
 use mongodb::{
@@ -14,7 +13,6 @@ use serde_json::json;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ReenewalToggledDoc {
     pub tx_hash: String,
-    pub meta_hash: String,
     pub domain: String,
     pub renewer: String,
     pub allowance: String,
@@ -160,8 +158,8 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
         },
         doc! {
             "$match": doc! {
-                "metadata": doc! {
-                    "$ne": []
+                "metadata.meta_hash": doc! {
+                  "$exists": true
                 }
             }
         },
@@ -202,7 +200,7 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
         match result {
             Ok(document) => match mongodb::bson::from_document::<ReenewalToggledDoc>(document) {
                 Err(e) => {
-                    logger.severe(format!("Error parsing doc: {}", e));
+                    logger.severe(format!("Error parsing doc in renewal: {}", e));
                 }
                 Ok(ar_doc) => {
                     process_toggle_renewal(&conf, &logger, &ar_doc).await;
