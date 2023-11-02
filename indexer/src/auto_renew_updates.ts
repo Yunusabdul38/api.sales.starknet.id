@@ -1,16 +1,12 @@
-import {
-  uint256,
-  Block,
-  EventWithTransaction,
-  BlockHeader,
-} from "./common/deps.ts";
+import { uint256, Block, EventWithTransaction } from "./common/deps.ts";
 import {
   formatFelt,
   SELECTOR_KEYS,
   DB_NAME,
   MONGO_CONNECTION_STRING,
+  FINALITY,
 } from "./common/constants.ts";
-import { decodeRootDomain, decodeDomain } from "./common/starknetid.ts";
+import { decodeRootDomain } from "./common/starknetid.ts";
 
 const filter = {
   header: { weak: true },
@@ -32,6 +28,7 @@ export const config = {
   network: "starknet",
   filter,
   sinkType: "mongo",
+  finality: FINALITY,
   sinkOptions: {
     connectionString: MONGO_CONNECTION_STRING,
     database: DB_NAME,
@@ -42,59 +39,63 @@ export const config = {
 
 export default function transform({ events }: Block) {
   // Mapping and decoding each event in the block
-  const decodedEvents = events.map(({ event }: EventWithTransaction) => {
-    const key = BigInt(event.keys[0]);
+  const decodedEvents = events.map(
+    ({ event, transaction }: EventWithTransaction) => {
+      const key = BigInt(event.keys[0]);
 
-    switch (key) {
-      case SELECTOR_KEYS.UPDATE_AUTO_RENEW: {
-        const [_, _domain] = event.keys;
-        const [renewer, amountLow, amountHigh, metaHash] = event.data;
-        const domain = decodeRootDomain(BigInt(_domain));
-        return {
-          entity: {
-            domain,
-            renewer,
-          },
-          update: [
-            {
-              $set: {
-                domain,
-                renewer,
-                allowance: uint256
-                  .uint256ToBN({ low: amountLow, high: amountHigh })
-                  .toString(),
-                meta_hash: metaHash,
-              },
+      switch (key) {
+        case SELECTOR_KEYS.UPDATE_AUTO_RENEW: {
+          const [_, _domain] = event.keys;
+          const [renewer, amountLow, amountHigh, metaHash] = event.data;
+          const domain = decodeRootDomain(BigInt(_domain));
+          return {
+            entity: {
+              domain,
+              renewer,
             },
-          ],
-        };
-      }
-
-      case SELECTOR_KEYS.DISABLE_AUTO_RENEW: {
-        const [_, _domain] = event.keys;
-        const [renewer] = event.data;
-        const domain = decodeRootDomain(BigInt(_domain));
-        return {
-          entity: {
-            domain,
-            renewer,
-          },
-          update: [
-            {
-              $set: {
-                domain,
-                renewer,
-                allowance: "0",
+            update: [
+              {
+                $set: {
+                  domain,
+                  renewer,
+                  allowance: uint256
+                    .uint256ToBN({ low: amountLow, high: amountHigh })
+                    .toString(),
+                  meta_hash: metaHash.slice(4),
+                  tx_hash: transaction.meta.hash,
+                },
               },
-            },
-          ],
-        };
-      }
+            ],
+          };
+        }
 
-      default:
-        return;
+        case SELECTOR_KEYS.DISABLE_AUTO_RENEW: {
+          const [_, _domain] = event.keys;
+          const [renewer] = event.data;
+          const domain = decodeRootDomain(BigInt(_domain));
+          return {
+            entity: {
+              domain,
+              renewer,
+            },
+            update: [
+              {
+                $set: {
+                  domain,
+                  renewer,
+                  allowance: "0",
+                  tx_hash: transaction.meta.hash,
+                },
+              },
+            ],
+          };
+        }
+
+        default:
+          return;
+      }
     }
-  });
+  );
 
   // Filtering out undefined or null values from the decoded events array
   return decodedEvents.filter(Boolean);

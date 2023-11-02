@@ -9,6 +9,7 @@ pub_struct!(Clone, Deserialize; General {
 pub_struct!(Clone, Deserialize; Email {
     base_url : String,
     api_key: String,
+    ar_group_id : String,
 });
 
 pub_struct!(Clone, Deserialize; Database {

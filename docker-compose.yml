@@ -9,7 +9,7 @@ services:
       - etcd_data:/bitnami/etcd
 
   indexer_sales:
-    image: quay.io/apibara/sink-mongo:0.4.1
+    image: quay.io/apibara/sink-mongo:0.4.3
     depends_on:
       - etcd
     restart: always
@@ -20,6 +20,8 @@ services:
       - --allow-env=/data/env
       - /data/src/sales.ts
       - --status-server-address=0.0.0.0:8001
+      - --max-message-size=1GB
+      - --timeout-duration-seconds=120s
     volumes:
       - ./indexer:/data/
     environment:
@@ -28,7 +30,7 @@ services:
       AUTH_TOKEN: dna_xxx
 
   indexer_tax_txs:
-    image: quay.io/apibara/sink-mongo:0.4.1
+    image: quay.io/apibara/sink-mongo:0.4.3
     depends_on:
       - etcd
     restart: always
@@ -39,11 +41,34 @@ services:
       - --allow-env=/data/env
       - /data/src/tax_txs.ts
       - --status-server-address=0.0.0.0:8002
+      - --max-message-size=1GB
+      - --timeout-duration-seconds=120s
     volumes:
       - ./indexer:/data/
     environment:
       PERSIST_TO_ETCD: http://etcd:2379
       SINK_ID: tax-txs-indexer
+      AUTH_TOKEN: dna_xxx
+
+  indexer_auto_renew:
+    image: quay.io/apibara/sink-mongo:0.4.3
+    depends_on:
+      - etcd
+    restart: always
+    ports:
+      - "8003:8003"
+    command:
+      - run
+      - --allow-env=/data/env
+      - /data/src/auto_renew_updates.ts
+      - --status-server-address=0.0.0.0:8003
+      - --max-message-size=1GB
+      - --timeout-duration-seconds=120s
+    volumes:
+      - ./indexer:/data/
+    environment:
+      PERSIST_TO_ETCD: http://etcd:2379
+      SINK_ID: auto-renew-updates-indexer
       AUTH_TOKEN: dna_xxx
 
   sale_actions:

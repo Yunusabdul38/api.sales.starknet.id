@@ -1,4 +1,5 @@
 STREAM_URL='https://goerli.starknet.a5a.ch'
+FINALITY='DATA_STATUS_PENDING'
 DB_NAME='goerli'
 STARTING_BLOCK=886273
 MONGO_CONNECTION_STRING='mongodb://mongo:mongo@localhost/?retryWrites=true&w=majority'

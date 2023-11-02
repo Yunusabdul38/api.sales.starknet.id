@@ -1,3 +1,4 @@
+use super::MetadataDoc;
 use crate::{config::Config, logger::Logger};
 use chrono::NaiveDateTime;
 use email_address::EmailAddress;
@@ -10,17 +11,8 @@ use reqwest::header;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct MetadataDoc {
-    pub meta_hash: String,
-    pub email: String,
-    pub tax_state: String,
-    pub salt: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct SaleDoc {
     pub tx_hash: String,
-    pub meta_hash: String,
     pub domain: String,
     pub price: f64,
     pub payer: String,
@@ -48,7 +40,7 @@ async fn process_sale(conf: &Config, logger: &Logger, sale: &SaleDoc) {
 
     // Construct the URL with parameters
     let url = format!(
-        "{base_url}?email={email}&fields[name]={domain}&fields[expiry]={expiry}&{groups}",
+        "{base_url}/subscribers?email={email}&fields[name]={domain}&fields[expiry]={expiry}&{groups}",
         base_url = conf.email.base_url,
         email = &sale.metadata[0].email,
         domain = &sale.domain,
@@ -100,7 +92,9 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
         },
         doc! {
             "$match": {
-                "metadata": { "$ne": [] }
+                "metadata.meta_hash": doc! {
+                  "$exists": true
+                }
             }
         },
         doc! {
@@ -139,11 +133,11 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
         match result {
             Ok(document) => match mongodb::bson::from_document::<SaleDoc>(document) {
                 Err(e) => {
-                    logger.severe(format!("Error parsing doc: {}", e));
+                    logger.severe(format!("Error parsing doc in purchase: {}", e));
                 }
                 Ok(sales_doc) => {
                     process_sale(&conf, &logger, &sales_doc).await;
-                    processed.push(sales_doc.meta_hash);
+                    processed.push(sales_doc.metadata[0].meta_hash.clone());
                 }
             },
             Err(e) => {
