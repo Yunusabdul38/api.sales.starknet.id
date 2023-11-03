@@ -21,7 +21,7 @@ services:
       - /data/src/sales.ts
       - --status-server-address=0.0.0.0:8001
       - --max-message-size=1GB
-      - --timeout-duration-seconds=120s
+      - --timeout-duration-seconds=1200
     volumes:
       - ./indexer:/data/
     environment:
@@ -42,7 +42,7 @@ services:
       - /data/src/tax_txs.ts
       - --status-server-address=0.0.0.0:8002
       - --max-message-size=1GB
-      - --timeout-duration-seconds=120s
+      - --timeout-duration-seconds=1200
     volumes:
       - ./indexer:/data/
     environment:
@@ -63,7 +63,7 @@ services:
       - /data/src/auto_renew_updates.ts
       - --status-server-address=0.0.0.0:8003
       - --max-message-size=1GB
-      - --timeout-duration-seconds=120s
+      - --timeout-duration-seconds=1200
     volumes:
       - ./indexer:/data/
     environment:
