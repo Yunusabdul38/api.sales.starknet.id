@@ -110,6 +110,14 @@ async fn process_toggle_renewal(conf: &Config, logger: &Logger, sale: &ReenewalT
             .map(|group| format!("groups[]={}", group))
             .collect();
 
+        if groups_params.len() == 0 {
+            logger.warning(format!(
+                "Empty groups for email: {}",
+                &sale.metadata[0].email
+            ));
+            return;
+        }
+
         // Construct the URL with parameters
         let url = format!(
         "{base_url}/subscribers?email={email}&fields[name]={domain}&fields[renewer]={renewer}&{groups}",
