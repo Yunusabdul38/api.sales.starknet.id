@@ -14,10 +14,14 @@ const filter = {
     {
       fromAddress: Deno.env.get("RENEWAL_CONTRACT"),
       keys: [formatFelt(SELECTOR_KEYS.UPDATE_AUTO_RENEW)],
+      includeTransaction: true,
+      includeReceipt: false,
     },
     {
       fromAddress: Deno.env.get("RENEWAL_CONTRACT"),
       keys: [formatFelt(SELECTOR_KEYS.DISABLE_AUTO_RENEW)],
+      includeTransaction: true,
+      includeReceipt: false,
     },
   ],
 };

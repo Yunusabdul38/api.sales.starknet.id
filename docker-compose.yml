@@ -9,7 +9,7 @@ services:
       - etcd_data:/bitnami/etcd
 
   indexer_sales:
-    image: quay.io/apibara/sink-mongo:0.4.3
+    image: quay.io/apibara/sink-mongo:0.4.4
     depends_on:
       - etcd
     restart: always
@@ -30,7 +30,7 @@ services:
       AUTH_TOKEN: dna_xxx
 
   indexer_tax_txs:
-    image: quay.io/apibara/sink-mongo:0.4.3
+    image: quay.io/apibara/sink-mongo:0.4.4
     depends_on:
       - etcd
     restart: always
@@ -51,7 +51,7 @@ services:
       AUTH_TOKEN: dna_xxx
 
   indexer_auto_renew:
-    image: quay.io/apibara/sink-mongo:0.4.3
+    image: quay.io/apibara/sink-mongo:0.4.4
     depends_on:
       - etcd
     restart: always

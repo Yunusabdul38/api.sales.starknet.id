@@ -137,6 +137,11 @@ async fn process_toggle_renewal(conf: &Config, logger: &Logger, sale: &ReenewalT
                         .await
                         .unwrap_or_else(|_| "Failed to retrieve response body".to_string())
                 ));
+                } else {
+                    logger.info(format!(
+                        "- Registered {} for domain {}",
+                        &sale.metadata[0].email, &sale.domain
+                    ));
                 }
             }
             Err(e) => {

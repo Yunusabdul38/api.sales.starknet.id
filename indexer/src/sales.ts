@@ -22,22 +22,32 @@ const filter = {
     {
       fromAddress: Deno.env.get("NAMING_CONTRACT"),
       keys: [formatFelt(SELECTOR_KEYS.STARK_UPDATE)],
+      includeTransaction: true,
+      includeReceipt: false,
     },
     {
       fromAddress: Deno.env.get("NAMING_CONTRACT"),
       keys: [formatFelt(SELECTOR_KEYS.SALE_METADATA)],
+      includeTransaction: false,
+      includeReceipt: false,
     },
     {
       fromAddress: Deno.env.get("ETH_CONTRACT"),
       keys: [formatFelt(SELECTOR_KEYS.TRANSFER)],
+      includeTransaction: false,
+      includeReceipt: false,
     },
     {
       fromAddress: Deno.env.get("REFERRAL_CONTRACT"),
       keys: [formatFelt(SELECTOR_KEYS.REFERRAL)],
+      includeTransaction: false,
+      includeReceipt: false,
     },
     {
       fromAddress: Deno.env.get("RENEWAL_CONTRACT"),
       keys: [formatFelt(SELECTOR_KEYS.AUTO_RENEW)],
+      includeTransaction: false,
+      includeReceipt: false,
     },
   ],
 };
