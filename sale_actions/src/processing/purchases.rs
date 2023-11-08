@@ -38,6 +38,14 @@ async fn process_sale(conf: &Config, logger: &Logger, sale: &SaleDoc) {
         .map(|group| format!("groups[]={}", group))
         .collect();
 
+    if groups_params.len() == 0 {
+        logger.warning(format!(
+            "Empty groups for email: {}",
+            &sale.metadata[0].email
+        ));
+        return;
+    }
+
     // Construct the URL with parameters
     let url = format!(
         "{base_url}/subscribers?email={email}&fields[name]={domain}&fields[expiry]={expiry}&{groups}",
