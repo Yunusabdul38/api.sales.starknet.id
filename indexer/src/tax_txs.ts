@@ -20,6 +20,8 @@ const filter = {
     {
       fromAddress: Deno.env.get("ETH_CONTRACT"),
       keys: [formatFelt(SELECTOR_KEYS.TRANSFER)],
+      includeTransaction: true,
+      includeReceipt: false,
     },
   ],
 };

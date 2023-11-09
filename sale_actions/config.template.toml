@@ -2,7 +2,7 @@
 check_delay = 10
 
 [email]
-base_url="https://connect.mailerlite.com/api/subscribers"
+base_url = "https://connect.mailerlite.com/api"
 api_key = "xxx"
 ar_group_id = "xxx"
 
