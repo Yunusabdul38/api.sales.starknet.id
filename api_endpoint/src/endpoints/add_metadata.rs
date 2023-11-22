@@ -19,7 +19,7 @@ pub struct AddMetadata {
 
 fn compute_metadata_hash(email: &str, tax_state: &str, salt: &str) -> String {
     let separator = "|";
-    let data = format!("{}{}{}{}{}", email, separator, tax_state, separator, salt);
+    let data = format!("{}{}{}{}{}", email, separator, tax_state.replace("|", ""), separator, salt);
 
     let mut hasher = Sha256::new();
     hasher.update(data.as_bytes());
