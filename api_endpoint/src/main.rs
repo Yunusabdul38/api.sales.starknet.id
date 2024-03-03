@@ -47,6 +47,10 @@ async fn main() {
         .route("/", get(root))
         .route("/add_metadata", post(endpoints::add_metadata::handler))
         .route("/mail_subscribe", post(endpoints::mail_subscribe::handler))
+        .route(
+            "/newsletter_subscribe",
+            post(endpoints::newsletter_subscribe::handler),
+        )
         .with_state(shared_state)
         .layer(cors);
 
