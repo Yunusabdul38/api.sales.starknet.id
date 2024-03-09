@@ -5,6 +5,11 @@ port = 8080
 name = "goerli"
 connection_string = "xxxxxx"
 
+[email]
+base_url = "https://connect.mailerlite.com/api"
+api_key = "xxx"
+ar_group_id = "xxx"
+
 [watchtower]
 enabled = true
 endpoint = "https://api.watchtower.starknet.id/service/add_message"

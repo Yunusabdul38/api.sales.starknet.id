@@ -40,6 +40,26 @@ pub async fn handler(
         return get_error("Email already exists".to_string());
     }
 
+    // Mailerlite API
+    let base_url = state.conf.email.base_url.clone();
+    let api_key = state.conf.email.api_key.clone();
+    let ar_group_id = state.conf.email.ar_group_id.clone();
+
+    let url = format!("{}/subscribers", base_url);
+    let client = reqwest::Client::new();
+    let response = client
+        .post(&url)
+        .header("content-type", "application/json")
+        .header("accept", "application/json")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&serde_json::json!({ "email": query.email, "groups": [ar_group_id] }))
+        .send()
+        .await;
+
+    if let Err(err) = response {
+        return get_error(format!("Failed to send request to Mailerlite: {}", err));
+    }
+
     let bson_doc = mongodb::bson::to_bson(&AddNewsletterRecord {
         email: query.email,
         address: query.address,
