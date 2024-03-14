@@ -9,6 +9,12 @@ pub_struct!(Clone, Deserialize; Database {
     connection_string: String,
 });
 
+pub_struct!(Clone, Deserialize; Email {
+    base_url : String,
+    api_key: String,
+    ar_group_id : String,
+});
+
 pub_struct!(Clone, Deserialize; WatchtowerTypes {
     info: String,
     warning: String,
@@ -27,6 +33,7 @@ pub_struct!(Clone, Deserialize;  Config {
     server: Server,
     database: Database,
     watchtower: Watchtower,
+    email: Email,
 });
 
 pub fn load() -> Config {
