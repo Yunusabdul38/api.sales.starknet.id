@@ -1,0 +1,10 @@
+.*
+target
+backups
+_docker
+generated
+user_conf.d
+assets
+config.template.toml
+docker-compose.prod.yml
+docker-compose.yml
