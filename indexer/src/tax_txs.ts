@@ -12,18 +12,23 @@ import {
   DB_NAME,
   MONGO_CONNECTION_STRING,
   FINALITY,
+  TOKEN_CONTRACTS_STRINGS,
 } from "./common/constants.ts";
+
+const events = [];
+
+for (const tokenContract of TOKEN_CONTRACTS_STRINGS) {
+  events.push({
+    fromAddress: tokenContract,
+    keys: [formatFelt(SELECTOR_KEYS.TRANSFER)],
+    includeTransaction: true,
+    includeReceipt: false,
+  });
+}
 
 const filter = {
   header: { weak: true },
-  events: [
-    {
-      fromAddress: Deno.env.get("ETH_CONTRACT"),
-      keys: [formatFelt(SELECTOR_KEYS.TRANSFER)],
-      includeTransaction: true,
-      includeReceipt: false,
-    },
-  ],
+  events,
 };
 
 export const config = {
@@ -43,7 +48,8 @@ export const config = {
 
 type TaxTxDocument = {
   tx_hash: string;
-  amount_eth: number;
+  amount: number;
+  token: string;
 };
 
 export default function transform({ events }: Block) {
@@ -55,10 +61,11 @@ export default function transform({ events }: Block) {
 
       return {
         tx_hash: transaction.meta.hash,
-        amount_eth: +formatUnits(
+        amount: +formatUnits(
           uint256.uint256ToBN({ low: amountLow, high: amountHigh }),
           DECIMALS
         ),
+        token: event.fromAddress,
       };
     }
   );
