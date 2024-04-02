@@ -12,12 +12,12 @@ import {
   DB_NAME,
   MONGO_CONNECTION_STRING,
   FINALITY,
-  TOKEN_CONTRACTS_STRINGS,
+  TOKEN_CONTRACTS,
 } from "./common/constants.ts";
 
 const events = [];
 
-for (const tokenContract of TOKEN_CONTRACTS_STRINGS) {
+for (const tokenContract of TOKEN_CONTRACTS) {
   events.push({
     fromAddress: tokenContract,
     keys: [formatFelt(SELECTOR_KEYS.TRANSFER)],

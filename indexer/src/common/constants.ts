@@ -38,10 +38,10 @@ const TOKEN_CONTRACTS_LEN = parseInt(
 );
 
 // Dynamically retrieve each token contract
-export const TOKEN_CONTRACTS_STRINGS: string[] = [];
+export const TOKEN_CONTRACTS: string[] = [];
 
 for (let i = 0; i < TOKEN_CONTRACTS_LEN; i++) {
   const tokenContractEnvName = `TOKEN_CONTRACT_${i}`;
   const tokenContract = Deno.env.get(tokenContractEnvName) as string;
-  TOKEN_CONTRACTS_STRINGS.push(tokenContract);
+  TOKEN_CONTRACTS.push(tokenContract);
 }

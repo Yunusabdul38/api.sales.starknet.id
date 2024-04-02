@@ -13,7 +13,7 @@ import {
   MONGO_CONNECTION_STRING,
   FINALITY,
   NAMING_UPGRADE_A_BLOCK,
-  TOKEN_CONTRACTS_STRINGS,
+  TOKEN_CONTRACTS,
 } from "./common/constants.ts";
 import { decodeDomain } from "./common/starknetid.ts";
 
@@ -38,7 +38,7 @@ const events = [
   },
 ];
 
-for (const tokenContract of TOKEN_CONTRACTS_STRINGS) {
+for (const tokenContract of TOKEN_CONTRACTS) {
   events.push({
     fromAddress: tokenContract,
     keys: [formatFelt(SELECTOR_KEYS.TRANSFER)],
