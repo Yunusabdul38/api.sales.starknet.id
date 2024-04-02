@@ -47,7 +47,6 @@ for (const tokenContract of TOKEN_CONTRACTS) {
   });
 }
 
-
 const filter = {
   header: { weak: true },
   events,
@@ -72,6 +71,7 @@ type SaleDocument = {
   tx_hash: string;
   meta_hash: string;
   domain: string;
+  token: string;
   price: number;
   payer: string;
   timestamp: number;
@@ -138,6 +138,7 @@ function tranform(timestamp: number, events: EventWithTransaction[]) {
             tx_hash: transaction.meta.hash,
             meta_hash: metadata.slice(4),
             domain: decodeDomain([BigInt(event.keys[1])]),
+            token: lastTransfer.token,
             price: +lastTransfer.amount,
             payer: lastTransfer.from_address,
             timestamp,
@@ -199,6 +200,7 @@ function tranformCairoZero(timestamp: number, events: EventWithTransaction[]) {
             tx_hash: transaction.meta.hash,
             meta_hash: metadata.slice(4),
             domain: decodeDomain(event.data.slice(1, 1 + arrLen).map(BigInt)),
+            token: lastTransfer.token,
             price: +lastTransfer.amount,
             payer: lastTransfer.from_address,
             timestamp: timestamp,
