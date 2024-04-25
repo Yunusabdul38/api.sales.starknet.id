@@ -129,6 +129,7 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
                 "same_tx_groups": "$same_tx_groups.group"
             }
         },
+    ];
     let sales_collection: Collection<Document> = db.collection("sales");
     let mut cursor = sales_collection.aggregate(pipeline, None).await.unwrap();
     let mut processed = Vec::new();
