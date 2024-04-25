@@ -47,13 +47,16 @@ async fn process_sale(conf: &Config, logger: &Logger, sale: &SaleDoc) {
     let url = format!(
         "{base_url}/subscribers?email={email}&fields[name]={domain}&fields[expiry]={expiry}&{groups}",
         base_url = conf.email.base_url,
-        email = &sale.metadata[0].email,
-        domain = &sale.domain,
+        email = urlencoding::encode(&sale.metadata[0].email),
+        domain = urlencoding::encode(&sale.domain),
         expiry = match NaiveDateTime::from_timestamp_opt(sale.expiry, 0) {
-            Some(time) => time.format("%Y-%m-%d %H:%M:%S").to_string(),
+            Some(time) => urlencoding::encode(&time.format("%Y-%m-%d %H:%M:%S").to_string()).to_string(),
             _ => "none".to_string(),
         },
-        groups = groups_params.join("&")
+        groups = groups_params.iter()
+                              .map(|param| urlencoding::encode(param))
+                              .collect::<Vec<_>>()
+                              .join("&")
     );
 
     // Construct the Authorization header using the api_key from the config
