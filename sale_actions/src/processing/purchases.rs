@@ -18,9 +18,6 @@ pub struct SaleDoc {
     pub payer: String,
     pub timestamp: i64,
     pub expiry: i64,
-    pub auto: bool,
-    pub sponsor: Option<String>,
-    pub sponsor_comm: Option<f64>,
     pub metadata: Vec<MetadataDoc>,
     pub same_tx_groups: Vec<String>, // The new field
 }
@@ -132,8 +129,6 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
                 "same_tx_groups": "$same_tx_groups.group"
             }
         },
-    ];
-
     let sales_collection: Collection<Document> = db.collection("sales");
     let mut cursor = sales_collection.aggregate(pipeline, None).await.unwrap();
     let mut processed = Vec::new();
