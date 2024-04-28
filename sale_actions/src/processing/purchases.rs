@@ -53,10 +53,7 @@ async fn process_sale(conf: &Config, logger: &Logger, sale: &SaleDoc) {
             Some(time) => urlencoding::encode(&time.format("%Y-%m-%d %H:%M:%S").to_string()).to_string(),
             _ => "none".to_string(),
         },
-        groups = groups_params.iter()
-                              .map(|param| urlencoding::encode(param))
-                              .collect::<Vec<_>>()
-                              .join("&")
+        groups = groups_params.join("&")
     );
 
     // Construct the Authorization header using the api_key from the config
