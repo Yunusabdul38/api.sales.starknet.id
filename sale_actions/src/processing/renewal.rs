@@ -6,9 +6,9 @@ use mongodb::{
     bson::{doc, Document},
     Collection, Database,
 };
-use reqwest::header;
+use reqwest::{header, Client};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ReenewalToggledDoc {
@@ -36,129 +36,80 @@ struct Group {
     id: String,
 }
 
-async fn process_toggle_renewal(conf: &Config, logger: &Logger, sale: &ReenewalToggledDoc) {
-    if !EmailAddress::is_valid(&sale.metadata[0].email) {
-        logger.local(format!("email {} is not valid", &sale.metadata[0].email));
-        return;
-    }
-    let client = reqwest::Client::new();
-    // Construct the Authorization header using the api_key from the config
-    let auth_header = format!("Bearer {}", &conf.email.api_key);
+// Function to create requests for disabling auto-renewal
+fn create_disable_request(data: &Data, base_url: &str, ar_group_id: &str) -> Value {
+    let new_groups = data
+        .groups
+        .iter()
+        .map(|g| g.id.clone())
+        .filter(|id| id != ar_group_id)
+        .collect::<Vec<String>>();
 
-    // if the auto renewal was actually disabled
-    if sale.allowance == "0" {
-        let response = client
-            .get(&format!(
-                "{base_url}/subscribers/{email}",
-                base_url = conf.email.base_url,
-                email = &sale.metadata[0].email
-            ))
-            .header(header::AUTHORIZATION, &auth_header)
-            .send()
-            .await;
-        let result = match response {
-            Ok(res) => match res.json::<ApiResponse>().await {
-                Ok(api_response) => api_response.data,
-                Err(err) => {
-                    logger.severe(format!(
-                        "Error1 while trying to toggle off AR emails: {}",
-                        err
-                    ));
-                    return;
-                }
-            },
-            Err(err) => {
-                logger.severe(format!(
-                    "Error2 while trying to toggle off AR emails: {}",
-                    err
-                ));
-                return;
-            }
-        };
+    let url = format!("{base_url}/subscribers/{id}", base_url = base_url, id = data.id);
 
-        let new_groups = result
-            .groups
-            .iter()
-            .map(|g| g.id.clone())
-            .filter(|id| id != &conf.email.ar_group_id)
-            .collect::<Vec<String>>();
-        let response = client
-            .put(&format!(
-                "{base_url}/subscribers/{id}",
-                base_url = conf.email.base_url,
-                id = result.id
-            ))
-            .header(header::AUTHORIZATION, &auth_header)
-            .json(&(json!({ "groups": new_groups })))
-            .send()
-            .await;
-        match response {
-            Ok(value) => {
-                logger.info(format!("disabled ar email: {:?}", value));
-            }
-            Err(value) => {
-                logger.severe(format!("error when disabling ar emails: {:?}", value));
-            }
-        }
+    json!({
+        "method": "PUT",
+        "path": &url,
+        "body": { "groups": new_groups }
+    })
+}
 
-        // default case: it is enabled, we add user to AR group
-    } else {
-        // Extract the groups from the MetadataDoc and format them
-        let groups_params: Vec<String> = sale
-            .same_tx_groups
-            .iter()
-            .map(|group| format!("groups[]={}", group))
-            .collect();
+// Function to create requests for enabling auto-renewal
+fn create_enable_request(sale: &ReenewalToggledDoc, base_url: &str) -> Value {
+    let groups_params: Vec<String> = sale
+        .same_tx_groups
+        .iter()
+        .map(|group| format!("groups[]={}", group))
+        .collect();
 
-        if groups_params.len() == 0 {
-            logger.warning(format!(
-                "Empty groups for email: {}",
-                &sale.metadata[0].email
-            ));
-            return;
-        }
-
-        // Construct the URL with parameters
-        let url = format!(
+    let url = format!(
         "{base_url}/subscribers?email={email}&fields[name]={domain}&fields[renewer]={renewer}&{groups}",
-        base_url = conf.email.base_url,
+        base_url = base_url,
         email = &sale.metadata[0].email,
         domain = &sale.domain,
         renewer = &sale.renewer,
         groups = groups_params.join("&")
     );
 
-        // Use reqwest to send a POST request
-        match client
-            .post(&url)
-            .header(header::AUTHORIZATION, auth_header)
-            .send()
-            .await
-        {
-            Ok(res) => {
-                if !res.status().is_success() {
-                    logger.severe(format!(
-                    "Received non-success status from POST request: {}. URL: {}, Response body: {}",
+    json!({
+        "method": "POST",
+        "path": &url
+    })
+}
+
+// Function to process batch requests
+async fn process_batch_requests(conf: &Config, logger: &Logger, requests: &[Value]) {
+    let batch_request = json!({
+        "requests": requests
+    });
+
+    let client = Client::new();
+    match client
+        .post("https://api.mailerlite.com/api/v2/batch")
+        .header("X-MailerLite-ApiKey", &conf.email.api_key)
+        .header(header::CONTENT_TYPE, "application/json")
+        .json(&batch_request)
+        .send()
+        .await
+    {
+        Ok(res) => {
+            if !res.status().is_success() {
+                logger.severe(format!(
+                    "Received non-success status from batch request: {}. Response body: {}",
                     res.status(),
-                    url,
                     res.text()
                         .await
                         .unwrap_or_else(|_| "Failed to retrieve response body".to_string())
                 ));
-                } else {
-                    logger.info(format!(
-                        "- Registered {} for domain {}",
-                        &sale.metadata[0].email, &sale.domain
-                    ));
-                }
             }
-            Err(e) => {
-                logger.severe(format!("Failed to send POST request: {}", e));
-            }
+        }
+        Err(e) => {
+            logger.severe(format!("Failed to send batch request: {}", e));
         }
     }
 }
 
+// Adjusted process_data to collect renewals and process in batch
 pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
     let pipeline: Vec<Document> = vec![
         doc! {
@@ -172,7 +123,7 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
         doc! {
             "$match": doc! {
                 "metadata.meta_hash": doc! {
-                  "$exists": true
+                    "$exists": true
                 }
             }
         },
@@ -208,16 +159,50 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
 
     let collection: Collection<Document> = db.collection("auto_renew_updates");
     let mut cursor = collection.aggregate(pipeline, None).await.unwrap();
-    let mut processed = Vec::new();
+    let mut batch_requests = Vec::new();
+    let batch_size = conf.email.batch_size;
+    let client = Client::new();
+
     while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => match mongodb::bson::from_document::<ReenewalToggledDoc>(document) {
                 Err(e) => {
                     logger.severe(format!("Error parsing doc in renewal: {}", e));
                 }
-                Ok(ar_doc) => {
-                    process_toggle_renewal(&conf, &logger, &ar_doc).await;
-                    processed.push(ar_doc.tx_hash);
+                Ok(renewal_doc) => {
+                    if !EmailAddress::is_valid(&renewal_doc.metadata[0].email) {
+                        logger.local(format!("email {} is not valid", &renewal_doc.metadata[0].email));
+                        continue;
+                    }
+
+                    if renewal_doc.allowance == "0" {
+                        let response = client
+                            .get(&format!(
+                                "{base_url}/subscribers/{email}",
+                                base_url = conf.email.base_url,
+                                email = &renewal_doc.metadata[0].email
+                            ))
+                            .header("X-MailerLite-ApiKey", &conf.email.api_key)
+                            .send()
+                            .await;
+
+                        if let Ok(res) = response {
+                            if let Ok(api_response) = res.json::<ApiResponse>().await {
+                                batch_requests.push(create_disable_request(&api_response.data, &conf.email.base_url, &conf.email.ar_group_id));
+                            } else {
+                                logger.severe("Error parsing response while disabling AR".to_string());
+                            }
+                        } else {
+                            logger.severe("Error sending GET request to disable AR".to_string());
+                        }
+                    } else {
+                        batch_requests.push(create_enable_request(&renewal_doc, &conf.email.base_url));
+                    }
+
+                    if batch_requests.len() >= batch_size {
+                        process_batch_requests(&conf, &logger, &batch_requests).await;
+                        batch_requests.clear();
+                    }
                 }
             },
             Err(e) => {
@@ -225,28 +210,8 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
             }
         }
     }
-    if processed.is_empty() {
-        return;
-    }
 
-    // Blacklist the processed documents
-    let processed_collection: Collection<Document> = db.collection("ar_processed");
-    match processed_collection
-        .insert_many(
-            processed
-                .iter()
-                .map(|tx_hash| doc! { "tx_hash": tx_hash })
-                .collect::<Vec<Document>>(),
-            None,
-        )
-        .await
-    {
-        Err(e) => {
-            logger.severe(format!(
-                "Error inserting into 'processed' collection: {}",
-                e
-            ));
-        }
-        _ => {}
+    if !batch_requests.is_empty() {
+        process_batch_requests(&conf, &logger, &batch_requests).await;
     }
 }
