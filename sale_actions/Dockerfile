@@ -4,6 +4,10 @@ FROM rust:latest
 # Set the working directory
 WORKDIR .
 
+RUN rustup update
+RUN rustc --version
+RUN cargo --version
+
 RUN ls -la
 
 # Copy the Cargo.toml and Cargo.lock files

@@ -5,6 +5,7 @@ check_delay = 10
 base_url = "https://connect.mailerlite.com/api"
 api_key = "xxx"
 ar_group_id = "xxx"
+batch_size = 100
 
 [database]
 name = "goerli"
