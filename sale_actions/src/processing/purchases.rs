@@ -217,7 +217,7 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
                     logger.severe(format!("Error parsing doc in purchase: {}", e));
                 }
                 Ok(sales_doc) => {
-                    processed.push(sales_doc);
+                    processed.push(sales_doc.);
                     batch.push(sales_doc);
                     if batch.len() >= batch_size {
                         process_batch(&conf, &logger, &batch).await;
