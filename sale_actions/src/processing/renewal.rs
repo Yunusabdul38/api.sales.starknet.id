@@ -45,7 +45,11 @@ fn create_disable_request(data: &Data, base_url: &str, ar_group_id: &str) -> Val
         .filter(|id| id != ar_group_id)
         .collect::<Vec<String>>();
 
-    let url = format!("{base_url}/subscribers/{id}", base_url = base_url, id = data.id);
+    let url = format!(
+        "{base_url}/subscribers/{id}",
+        base_url = base_url,
+        id = data.id
+    );
 
     json!({
         "method": "PUT",
@@ -113,52 +117,90 @@ async fn process_batch_requests(conf: &Config, logger: &Logger, requests: &[Valu
 pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
     let pipeline: Vec<Document> = vec![
         doc! {
-            "$lookup": doc! {
+            "$match": {
+                "meta_hash": { "$exists": true },
+                "tx_hash": { "$exists": true }
+            }
+        },
+        doc! {
+            "$lookup": {
                 "from": "metadata",
-                "localField": "meta_hash",
-                "foreignField": "meta_hash",
+                "let": { "meta_hash": "$meta_hash" },
+                "pipeline": [
+                    doc! {
+                        "$match": {
+                            "$expr": { "$eq": [ "$meta_hash", "$$meta_hash" ] }
+                        }
+                    },
+                    doc! {
+                        "$project": { "_id": 0, "meta_hash": 1 }
+                    }
+                ],
                 "as": "metadata"
             }
         },
         doc! {
-            "$match": doc! {
-                "metadata.meta_hash": doc! {
-                    "$exists": true
-                }
+            "$match": {
+                "metadata": { "$ne": [] }
             }
         },
         doc! {
-            "$lookup": doc! {
+            "$lookup": {
                 "from": "ar_processed",
-                "localField": "tx_hash",
-                "foreignField": "tx_hash",
+                "let": { "tx_hash": "$tx_hash" },
+                "pipeline": [
+                    doc! {
+                        "$match": {
+                            "$expr": { "$eq": [ "$tx_hash", "$$tx_hash" ] }
+                        }
+                    },
+                    doc! {
+                        "$project": { "_id": 0, "tx_hash": 1 }
+                    }
+                ],
                 "as": "processed_doc"
             }
         },
         doc! {
-            "$match": doc! {
-                "processed_doc": doc! {
-                    "$eq": []
-                }
+            "$match": {
+                "processed_doc": { "$eq": [] }
             }
         },
         doc! {
-            "$lookup": doc! {
+            "$lookup": {
                 "from": "email_groups",
-                "localField": "tx_hash",
-                "foreignField": "tx_hash",
+                "let": { "tx_hash": "$tx_hash" },
+                "pipeline": [
+                    doc! {
+                        "$match": {
+                            "$expr": { "$eq": [ "$tx_hash", "$$tx_hash" ] }
+                        }
+                    },
+                    doc! {
+                        "$project": { "_id": 0, "group": 1 }
+                    }
+                ],
                 "as": "same_tx_groups"
             }
         },
         doc! {
-            "$addFields": doc! {
-                "same_tx_groups": "$same_tx_groups.group"
+            "$project": {
+                "meta_hash": 1,
+                "tx_hash": 1,
+                "same_tx_groups": {
+                    "$map": {
+                        "input": "$same_tx_groups",
+                        "as": "item",
+                        "in": "$$item.group"
+                    }
+                }
             }
         },
     ];
 
     let collection: Collection<Document> = db.collection("auto_renew_updates");
     let mut cursor = collection.aggregate(pipeline, None).await.unwrap();
+    let mut processed = Vec::new();
     let mut batch_requests = Vec::new();
     let batch_size = conf.email.batch_size;
     let client = Client::new();
@@ -171,7 +213,10 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
                 }
                 Ok(renewal_doc) => {
                     if !EmailAddress::is_valid(&renewal_doc.metadata[0].email) {
-                        logger.local(format!("email {} is not valid", &renewal_doc.metadata[0].email));
+                        logger.local(format!(
+                            "email {} is not valid",
+                            &renewal_doc.metadata[0].email
+                        ));
                         continue;
                     }
 
@@ -188,15 +233,22 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
 
                         if let Ok(res) = response {
                             if let Ok(api_response) = res.json::<ApiResponse>().await {
-                                batch_requests.push(create_disable_request(&api_response.data, &conf.email.base_url, &conf.email.ar_group_id));
+                                batch_requests.push(create_disable_request(
+                                    &api_response.data,
+                                    &conf.email.base_url,
+                                    &conf.email.ar_group_id,
+                                ));
                             } else {
-                                logger.severe("Error parsing response while disabling AR".to_string());
+                                logger.severe(
+                                    "Error parsing response while disabling AR".to_string(),
+                                );
                             }
                         } else {
                             logger.severe("Error sending GET request to disable AR".to_string());
                         }
                     } else {
-                        batch_requests.push(create_enable_request(&renewal_doc, &conf.email.base_url));
+                        batch_requests
+                            .push(create_enable_request(&renewal_doc, &conf.email.base_url));
                     }
 
                     if batch_requests.len() >= batch_size {
@@ -213,5 +265,26 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
 
     if !batch_requests.is_empty() {
         process_batch_requests(&conf, &logger, &batch_requests).await;
+    }
+
+    // Blacklist the processed documents
+    let processed_collection: Collection<Document> = db.collection("ar_processed");
+    match processed_collection
+        .insert_many(
+            processed
+                .iter()
+                .map(|tx_hash| doc! { "tx_hash": tx_hash })
+                .collect::<Vec<Document>>(),
+            None,
+        )
+        .await
+    {
+        Err(e) => {
+            logger.severe(format!(
+                "Error inserting into 'processed' collection: {}",
+                e
+            ));
+        }
+        _ => {}
     }
 }

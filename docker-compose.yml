@@ -71,12 +71,12 @@ services:
       SINK_ID: auto-renew-updates-indexer
       AUTH_TOKEN: dna_xxx
 
-  sale_actions:
-    container_name: sale_actions
-    build:
-      context: ./sale_actions/
-      dockerfile: Dockerfile
-    restart: always
+  # sale_actions:
+  #   container_name: sale_actions
+  #   build:
+  #     context: ./sale_actions/
+  #     dockerfile: Dockerfile
+  #   restart: always
 
   api_endpoint:
     container_name: api_endpoint

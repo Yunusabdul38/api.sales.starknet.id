@@ -89,51 +89,126 @@ async fn process_batch(conf: &Config, logger: &Logger, sales: &[SaleDoc]) {
 pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
     let pipeline: Vec<Document> = vec![
         doc! {
-            "$lookup": {
-                "from": "metadata",
-                "localField": "meta_hash",
-                "foreignField": "meta_hash",
-                "as": "metadata"
-            }
-        },
-        doc! {
-            "$match": {
-                "metadata.meta_hash": doc! {
-                  "$exists": true
+            "$match": doc! {
+                "meta_hash": doc! {
+                    "$ne": ""
                 }
             }
         },
         doc! {
-            "$lookup": {
+            "$lookup": doc! {
+                "from": "metadata",
+                "let": doc! {
+                    "meta_hash": "$meta_hash"
+                },
+                "pipeline": [
+                    doc! {
+                        "$match": doc! {
+                            "$expr": doc! {
+                                "$eq": [
+                                    "$meta_hash",
+                                    "$$meta_hash"
+                                ]
+                            }
+                        }
+                    },
+                    doc! {
+                        "$project": doc! {
+                            "_id": 0,
+                            "meta_hash": 1
+                        }
+                    }
+                ],
+                "as": "metadata"
+            }
+        },
+        doc! {
+            "$match": doc! {
+                "metadata": doc! {
+                    "$ne": []
+                }
+            }
+        },
+        doc! {
+            "$lookup": doc! {
                 "from": "processed",
-                "localField": "meta_hash",
-                "foreignField": "meta_hash",
+                "let": doc! {
+                    "meta_hash": "$meta_hash"
+                },
+                "pipeline": [
+                    doc! {
+                        "$match": doc! {
+                            "$expr": doc! {
+                                "$eq": [
+                                    "$meta_hash",
+                                    "$$meta_hash"
+                                ]
+                            }
+                        }
+                    },
+                    doc! {
+                        "$project": doc! {
+                            "_id": 0,
+                            "meta_hash": 1
+                        }
+                    }
+                ],
                 "as": "processed_doc"
             }
         },
         doc! {
-            "$match": {
-                "processed_doc": { "$eq": [] }
+            "$match": doc! {
+                "processed_doc": doc! {
+                    "$eq": []
+                }
             }
         },
         doc! {
-            "$lookup": {
+            "$lookup": doc! {
                 "from": "email_groups",
-                "localField": "tx_hash",
-                "foreignField": "tx_hash",
+                "let": doc! {
+                    "tx_hash": "$tx_hash"
+                },
+                "pipeline": [
+                    doc! {
+                        "$match": doc! {
+                            "$expr": doc! {
+                                "$eq": [
+                                    "$tx_hash",
+                                    "$$tx_hash"
+                                ]
+                            }
+                        }
+                    },
+                    doc! {
+                        "$project": doc! {
+                            "_id": 0,
+                            "group": 1
+                        }
+                    }
+                ],
                 "as": "same_tx_groups"
             }
         },
-        // Optional: If you only want the 'group' field from the same_tx_groups
         doc! {
-            "$addFields": {
-                "same_tx_groups": "$same_tx_groups.group"
+            "$project": doc! {
+                "meta_hash": 1,
+                "tx_hash": 1,
+                "same_tx_groups": doc! {
+                    "$map": doc! {
+                        "input": "$same_tx_groups",
+                        "as": "item",
+                        "in": "$$item.group"
+                    }
+                }
             }
         },
     ];
     let sales_collection: Collection<Document> = db.collection("sales");
     let mut cursor = sales_collection.aggregate(pipeline, None).await.unwrap();
     let mut batch = Vec::new();
+    let mut processed = Vec::new();
+
     let batch_size = conf.email.batch_size;
     while let Some(result) = cursor.next().await {
         match result {
@@ -142,6 +217,7 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
                     logger.severe(format!("Error parsing doc in purchase: {}", e));
                 }
                 Ok(sales_doc) => {
+                    processed.push(sales_doc);
                     batch.push(sales_doc);
                     if batch.len() >= batch_size {
                         process_batch(&conf, &logger, &batch).await;
@@ -158,5 +234,26 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
     // Process any remaining sales not reaching batch size
     if !batch.is_empty() {
         process_batch(&conf, &logger, &batch).await;
+    }
+
+    // Blacklist the processed documents
+    let processed_collection: Collection<Document> = db.collection("processed");
+    match processed_collection
+        .insert_many(
+            processed
+                .iter()
+                .map(|meta_hash| doc! { "meta_hash": meta_hash })
+                .collect::<Vec<Document>>(),
+            None,
+        )
+        .await
+    {
+        Err(e) => {
+            logger.severe(format!(
+                "Error inserting into 'processed' collection: {}",
+                e
+            ));
+        }
+        _ => {}
     }
 }
