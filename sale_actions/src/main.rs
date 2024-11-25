@@ -9,9 +9,9 @@ use tokio::time::{sleep, Duration};
 
 #[tokio::main]
 async fn main() {
-    println!("starting v{} of sale_actions", env!("CARGO_PKG_VERSION"));
     let conf = config::load();
     let logger = Logger::new(&conf.watchtower);
+    logger.info(format!("starting v{} of sale_actions", env!("CARGO_PKG_VERSION")));
     let db = Client::with_options(
         ClientOptions::parse(&conf.database.connection_string)
             .await
