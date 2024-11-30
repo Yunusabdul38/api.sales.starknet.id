@@ -243,8 +243,6 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
             processed
                 .iter()
                 .map(|tx_hash| doc! { "meta_hash": tx_hash })
-
-
                 .collect::<Vec<Document>>(),
             None,
         )
