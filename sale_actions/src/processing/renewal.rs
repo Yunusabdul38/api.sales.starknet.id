@@ -273,7 +273,7 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
         .insert_many(
             processed
                 .iter()
-                .map(|tx_hash| doc! { "tx_hash": tx_hash })
+                .map(|tx_hash: &String| doc! { "tx_hash": tx_hash })
                 .collect::<Vec<Document>>(),
             None,
         )
