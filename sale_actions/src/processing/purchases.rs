@@ -217,7 +217,7 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
                     logger.severe(format!("Error parsing doc in purchase: {}", e));
                 }
                 Ok(sales_doc) => {
-                    processed.push(sales_doc.);
+                    processed.push(sales_doc.tx_hash.clone());
                     batch.push(sales_doc);
                     if batch.len() >= batch_size {
                         process_batch(&conf, &logger, &batch).await;
@@ -242,7 +242,7 @@ pub async fn process_data(conf: &Config, db: &Database, logger: &Logger) {
         .insert_many(
             processed
                 .iter()
-                .map(|meta_hash| doc! { "meta_hash": meta_hash })
+                .map(|tx_hash| doc! { "meta_hash": tx_hash })
                 .collect::<Vec<Document>>(),
             None,
         )
