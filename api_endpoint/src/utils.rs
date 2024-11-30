@@ -26,7 +26,7 @@ pub fn get_specific_error(code: StatusCode, error: String) -> Response {
 
 pub fn to_hex(felt: FieldElement) -> String {
     let bytes = felt.to_bytes_be();
-    
+
     if bytes.iter().all(|&b| b == 0) {
         return String::from("0x0");
     }
@@ -38,14 +38,14 @@ pub fn to_hex(felt: FieldElement) -> String {
     for &byte in non_zero_bytes {
         write!(&mut result, "{:02x}", byte).unwrap();
     }
-    
+
     result
 }
 
 #[cfg(test)]
-mod mytests{
-    use starknet::core::types::FieldElement;
+mod utils_tests {
     use super::to_hex;
+    use starknet::core::types::FieldElement;
 
     #[test]
     fn test_to_hex_small_number() {
@@ -85,5 +85,4 @@ mod mytests{
         assert_eq!(to_hex(max).len(), 66);
         assert!(to_hex(max).starts_with("0x"));
     }
-
 }
