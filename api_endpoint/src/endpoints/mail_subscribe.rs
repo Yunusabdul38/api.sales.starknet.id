@@ -43,19 +43,28 @@ pub async fn handler(
         .collection::<mongodb::bson::Document>("email_groups");
 
     for group in query.groups {
-        let bson_doc = mongodb::bson::to_bson(&MailSubscribeDoc {
+        let bson_doc = match mongodb::bson::to_bson(&MailSubscribeDoc {
             tx_hash: query.tx_hash,
             group,
-        })
-        .expect("Failed to serialize to BSON");
+        }){
+            Ok(bson) => bson,
+            Err(err) => {
+                state.logger.severe(format!("Failed to serialize to BSON: {}", err));
+                return get_error("Internal server error".to_string());
+            }
+        };
 
         if let mongodb::bson::Bson::Document(document) = bson_doc {
             match emails_collection.insert_one(document, None).await {
                 Ok(_) => (),
-                Err(err) => return get_error(format!("Failed to insert document: {}", err)),
+                Err(err) => {
+                    state.logger.severe(format!("Failed to insert document: {}", err));
+                    return get_error("Internal server error".to_string());
+                }
             }
         } else {
-            return get_error("Failed to create BSON document".to_string());
+            state.logger.severe("Failed to create BSON document".to_string());
+            return get_error("Internal server error".to_string());
         }
     }
 
