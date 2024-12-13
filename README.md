@@ -113,6 +113,7 @@ To run the Indexer Read and follow the instructions below
 - **Language**: Deno
 - **Function**: Fetches transactions and associated metadata hashes.
 - **Directory**: `./indexer`
+- **Note**: A free token for the indexer can be generated on Apibara. Visit [Apibara's website](https://www.apibara.com/) for more details.
 
 ## Open a Second terminal and execute this command
 
