@@ -31,10 +31,15 @@ pub async fn handler(
 
     // Check if email already exists
     let filter = mongodb::bson::doc! { "email": &query.email };
-    let result = collection
+    let result = match collection
         .find_one(filter, None)
-        .await
-        .expect("Failed to execute find_one");
+        .await {
+        Ok(res) => res,
+        Err(err) => {
+            state.logger.severe(format!("Failed to execute find_one: {}", err));
+            return get_error("Internal server error".to_string());
+        }
+    };
 
     if let Some(_) = result {
         return get_error("Email already exists".to_string());
@@ -60,12 +65,17 @@ pub async fn handler(
         return get_error(format!("Failed to send request to Mailerlite: {}", err));
     }
 
-    let bson_doc = mongodb::bson::to_bson(&AddNewsletterRecord {
+    let bson_doc = match mongodb::bson::to_bson(&AddNewsletterRecord {
         email: query.email,
         address: query.address,
         source: "newsletter_subscription".to_string(),
-    })
-    .expect("Failed to serialize to BSON");
+    }) {
+        Ok(bson) => bson,
+        Err(err) => {
+            state.logger.severe(format!("Failed to serialize to BSON: {}", err));
+            return get_error("Internal server error".to_string());
+        }
+    };
 
     if let mongodb::bson::Bson::Document(document) = bson_doc {
         match collection.insert_one(document, None).await {
